@@ -261,33 +261,37 @@ export function renderThoughts() {
 
             debugLog(`[RPG Thoughts] Strategy 1 - Extracted ${extractedNames.length} names from thought signatures:`, extractedNames);
 
-            // Strategy 2: If not enough names, try extracting from anywhere in the data (look for character name patterns)
+            // Strategy 2: If not enough names, try extracting from emoji patterns or frequency
             if (extractedNames.length < presentCharacters.length) {
-                debugLog(`[RPG Thoughts] Not enough names from signatures, trying to detect character names in the data...`);
+                debugLog(`[RPG Thoughts] Not enough names from signatures (${extractedNames.length}/${presentCharacters.length}), trying frequency analysis...`);
 
-                // Look for common character names that appear multiple times with context clues
+                // Look for capitalized names in the data
                 const namePattern = /\b([A-Z][a-z]{2,15})\b/g;
                 const allNames = [...thoughtsData.matchAll(namePattern)].map(m => m[1]);
 
-                // Count occurrences and filter out common words
+                // Count occurrences and filter out common words AND already extracted names
                 const nameCounts = {};
+                const excludeWords = ['Present', 'Characters', 'Details', 'Relationship', 'Stats', 'Thoughts', 'Feelings', 'Enemy', 'Neutral', 'Friend', 'Lover'];
                 allNames.forEach(name => {
-                    if (!['Present', 'Characters', 'Details', 'Relationship', 'Stats', 'Thoughts', 'Feelings', 'Enemy', 'Neutral', 'Friend', 'Lover'].includes(name)) {
+                    if (!excludeWords.includes(name) && !extractedNames.includes(name)) {
                         nameCounts[name] = (nameCounts[name] || 0) + 1;
                     }
                 });
 
-                // Get names that appear multiple times (likely character names)
-                const likelyNames = Object.entries(nameCounts)
+                // Get names that appear multiple times, prioritizing unique ones
+                const additionalNames = Object.entries(nameCounts)
                     .filter(([_, count]) => count >= 2)
                     .sort((a, b) => b[1] - a[1])
                     .map(([name, _]) => name)
-                    .slice(0, presentCharacters.length);
+                    .slice(0, presentCharacters.length - extractedNames.length);
 
-                if (likelyNames.length >= extractedNames.length) {
-                    extractedNames = likelyNames;
-                    debugLog(`[RPG Thoughts] Strategy 2 - Detected ${extractedNames.length} likely character names:`, extractedNames);
-                }
+                // Combine signature names with frequency names
+                const combinedNames = [...extractedNames, ...additionalNames];
+
+                // Remove duplicates while preserving order
+                extractedNames = [...new Set(combinedNames)];
+
+                debugLog(`[RPG Thoughts] Strategy 2 - Combined with frequency analysis. Total: ${extractedNames.length} names:`, extractedNames);
             }
 
             if (extractedNames.length === presentCharacters.length) {
