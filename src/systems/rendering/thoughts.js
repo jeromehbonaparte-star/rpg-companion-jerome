@@ -243,20 +243,56 @@ export function renderThoughts() {
             debugLog(`[RPG Thoughts] ⚠️  CRITICAL: AI Error detected - all ${presentCharacters.length} characters have the same name: "${firstCharName}"`);
             console.error(`[RPG Thoughts] ⚠️  AI generated duplicate names for all characters. Attempting auto-fix by extracting names from thought content...`);
 
-            // Try to extract actual character names from the thought bubble data
+            // Try to extract actual character names from thought content signatures
             const thoughtsData = characterThoughtsData;
-            const thoughtMatches = thoughtsData.matchAll(/(?:Thoughts|Feelings):\s*.*?-\s*([A-Z][a-z]+)\s*$/gm);
-            const extractedNames = [...thoughtMatches].map(m => m[1]);
+
+            // Strategy 1: Look for thought signatures: "Thoughts: ... - CharacterName"
+            const thoughtPattern = /(?:Thoughts|Feelings):[^\n]*?-\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*$/gm;
+            const thoughtMatches = [...thoughtsData.matchAll(thoughtPattern)];
+            let extractedNames = thoughtMatches.map(m => m[1].trim());
+
+            debugLog(`[RPG Thoughts] Strategy 1 - Extracted ${extractedNames.length} names from thought signatures:`, extractedNames);
+
+            // Strategy 2: If not enough names, try extracting from anywhere in the data (look for character name patterns)
+            if (extractedNames.length < presentCharacters.length) {
+                debugLog(`[RPG Thoughts] Not enough names from signatures, trying to detect character names in the data...`);
+
+                // Look for common character names that appear multiple times with context clues
+                const namePattern = /\b([A-Z][a-z]{2,15})\b/g;
+                const allNames = [...thoughtsData.matchAll(namePattern)].map(m => m[1]);
+
+                // Count occurrences and filter out common words
+                const nameCounts = {};
+                allNames.forEach(name => {
+                    if (!['Present', 'Characters', 'Details', 'Relationship', 'Stats', 'Thoughts', 'Feelings', 'Enemy', 'Neutral', 'Friend', 'Lover'].includes(name)) {
+                        nameCounts[name] = (nameCounts[name] || 0) + 1;
+                    }
+                });
+
+                // Get names that appear multiple times (likely character names)
+                const likelyNames = Object.entries(nameCounts)
+                    .filter(([_, count]) => count >= 2)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([name, _]) => name)
+                    .slice(0, presentCharacters.length);
+
+                if (likelyNames.length >= extractedNames.length) {
+                    extractedNames = likelyNames;
+                    debugLog(`[RPG Thoughts] Strategy 2 - Detected ${extractedNames.length} likely character names:`, extractedNames);
+                }
+            }
 
             if (extractedNames.length === presentCharacters.length) {
-                debugLog(`[RPG Thoughts] ✓ Successfully extracted ${extractedNames.length} unique names from thought signatures:`, extractedNames);
+                debugLog(`[RPG Thoughts] ✓ Successfully extracted ${extractedNames.length} unique names:`, extractedNames);
+                console.warn(`[RPG Thoughts] Auto-fixing character names:`, extractedNames);
                 presentCharacters.forEach((char, index) => {
                     const oldName = char.name;
                     char.name = extractedNames[index];
                     debugLog(`[RPG Thoughts] Renamed character ${index + 1}: "${oldName}" → "${char.name}"`);
                 });
             } else {
-                console.error(`[RPG Thoughts] ❌ Auto-fix failed. Could not extract correct number of names. Please regenerate the AI response.`);
+                console.error(`[RPG Thoughts] ❌ Auto-fix failed. Extracted ${extractedNames.length} names but need ${presentCharacters.length}. Please regenerate the AI response.`);
+                console.error(`[RPG Thoughts] Extracted names:`, extractedNames);
             }
         }
     }
