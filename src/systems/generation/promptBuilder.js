@@ -245,7 +245,9 @@ export function generateTrackerInstructions(includeHtmlPrompt = true, includeCon
                 .join(' | ');
 
             // IMPORTANT: Show concrete multi-character example so AI creates separate blocks for EACH character
-            instructions += `IMPORTANT: List EACH present character as a separate block with their UNIQUE NAME. Do NOT combine multiple characters into one entry. Do NOT reuse the same character name for different characters.\n\n`;
+            instructions += `⚠️ CRITICAL: Each character MUST use their ACTUAL NAME from the scene. Do NOT use the same name for multiple characters.\n`;
+            instructions += `❌ WRONG: Using "Jean" for all three characters\n`;
+            instructions += `✅ CORRECT: Using "Jean", "Dvalin", "Paimon" (each character's actual unique name)\n\n`;
 
             // Example 1 - Use concrete example name to make it crystal clear
             instructions += `- [First Character's Actual Name, e.g., "Alice" (do NOT include ${userName})]\n`;

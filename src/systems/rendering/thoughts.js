@@ -233,6 +233,34 @@ export function renderThoughts() {
         'Friend': '⭐',
         'Lover': '❤️'
     };
+
+    // SMART FIX: Detect if AI used the same name for all characters (common AI error)
+    if (presentCharacters.length > 1) {
+        const firstCharName = presentCharacters[0].name;
+        const allSameName = presentCharacters.every(c => c.name === firstCharName);
+
+        if (allSameName) {
+            debugLog(`[RPG Thoughts] ⚠️  CRITICAL: AI Error detected - all ${presentCharacters.length} characters have the same name: "${firstCharName}"`);
+            console.error(`[RPG Thoughts] ⚠️  AI generated duplicate names for all characters. Attempting auto-fix by extracting names from thought content...`);
+
+            // Try to extract actual character names from the thought bubble data
+            const thoughtsData = characterThoughtsData;
+            const thoughtMatches = thoughtsData.matchAll(/(?:Thoughts|Feelings):\s*.*?-\s*([A-Z][a-z]+)\s*$/gm);
+            const extractedNames = [...thoughtMatches].map(m => m[1]);
+
+            if (extractedNames.length === presentCharacters.length) {
+                debugLog(`[RPG Thoughts] ✓ Successfully extracted ${extractedNames.length} unique names from thought signatures:`, extractedNames);
+                presentCharacters.forEach((char, index) => {
+                    const oldName = char.name;
+                    char.name = extractedNames[index];
+                    debugLog(`[RPG Thoughts] Renamed character ${index + 1}: "${oldName}" → "${char.name}"`);
+                });
+            } else {
+                console.error(`[RPG Thoughts] ❌ Auto-fix failed. Could not extract correct number of names. Please regenerate the AI response.`);
+            }
+        }
+    }
+
     debugLog('[RPG Thoughts] ==================== PARSING COMPLETE ====================');
     debugLog('[RPG Thoughts] Total characters parsed:', presentCharacters.length);
     debugLog('[RPG Thoughts] Characters array:', presentCharacters);
