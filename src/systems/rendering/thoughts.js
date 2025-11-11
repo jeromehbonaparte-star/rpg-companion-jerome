@@ -297,11 +297,58 @@ export function renderThoughts() {
             if (extractedNames.length === presentCharacters.length) {
                 debugLog(`[RPG Thoughts] ✓ Successfully extracted ${extractedNames.length} unique names:`, extractedNames);
                 console.warn(`[RPG Thoughts] Auto-fixing character names:`, extractedNames);
-                presentCharacters.forEach((char, index) => {
-                    const oldName = char.name;
-                    char.name = extractedNames[index];
-                    debugLog(`[RPG Thoughts] Renamed character ${index + 1}: "${oldName}" → "${char.name}"`);
+
+                // SMART MATCHING: Try to match names to characters based on description keywords
+                // This handles cases where thought signatures are wrong/misleading
+                const nameToCharIndex = {};
+
+                // For each extracted name, try to find which character it belongs to
+                extractedNames.forEach(name => {
+                    const nameLower = name.toLowerCase();
+
+                    // Look for the name or related keywords in character descriptions
+                    for (let i = 0; i < presentCharacters.length; i++) {
+                        if (nameToCharIndex[name] !== undefined) continue; // Already matched
+
+                        const char = presentCharacters[i];
+                        const descriptionText = Object.values(char).join(' ').toLowerCase();
+
+                        // Check if character description contains the name or known character traits
+                        const knownTraits = {
+                            'paimon': ['fairy', 'floating', 'small', 'white hair', 'crown', 'constellation'],
+                            'lumine': ['blonde', 'braid', 'sword', 'traveler', 'golden eyes', 'boots'],
+                            'dvalin': ['dragon', 'wings', 'corrupted', 'storm', 'wind'],
+                            'jean': ['knight', 'acting grand master', 'blonde', 'ponytail', 'uniform'],
+                            'amber': ['outrider', 'red', 'goggles', 'bow']
+                        };
+
+                        const traits = knownTraits[nameLower] || [];
+                        const hasMatchingTrait = traits.some(trait => descriptionText.includes(trait));
+
+                        if (hasMatchingTrait) {
+                            nameToCharIndex[name] = i;
+                            debugLog(`[RPG Thoughts] Matched "${name}" to character ${i} based on traits:`, traits);
+                            break;
+                        }
+                    }
                 });
+
+                // Assign names based on smart matching, or fall back to index order
+                if (Object.keys(nameToCharIndex).length === extractedNames.length) {
+                    debugLog(`[RPG Thoughts] Using smart trait-based matching`);
+                    Object.entries(nameToCharIndex).forEach(([name, charIndex]) => {
+                        const oldName = presentCharacters[charIndex].name;
+                        presentCharacters[charIndex].name = name;
+                        debugLog(`[RPG Thoughts] Smart-matched character ${charIndex}: "${oldName}" → "${name}"`);
+                    });
+                } else {
+                    debugLog(`[RPG Thoughts] Smart matching incomplete, falling back to index order`);
+                    presentCharacters.forEach((char, index) => {
+                        const oldName = char.name;
+                        char.name = extractedNames[index];
+                        debugLog(`[RPG Thoughts] Renamed character ${index + 1}: "${oldName}" → "${char.name}"`);
+                    });
+                }
             } else {
                 console.error(`[RPG Thoughts] ❌ Auto-fix failed. Extracted ${extractedNames.length} names but need ${presentCharacters.length}. Please regenerate the AI response.`);
                 console.error(`[RPG Thoughts] Extracted names:`, extractedNames);
