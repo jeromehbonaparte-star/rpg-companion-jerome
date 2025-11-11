@@ -244,14 +244,15 @@ export function generateTrackerInstructions(includeHtmlPrompt = true, includeCon
                 .map(f => `[${f.name}]`)
                 .join(' | ');
 
-            // Character block format
-            instructions += `- [Name (do not include ${userName}; state "Unavailable" if no major characters are present in the scene)]\n`;
+            // Character block format - Show 2 examples so AI understands to list EACH character separately
+            // Example 1
+            instructions += `- [Character 1 Name (do not include ${userName})]\n`;
 
             // Details line with emoji and custom fields
             if (fieldPlaceholders) {
-                instructions += `Details: [Present Character's Emoji] | ${fieldPlaceholders}\n`;
+                instructions += `Details: [Character 1's Emoji] | ${fieldPlaceholders}\n`;
             } else {
-                instructions += `Details: [Present Character's Emoji]\n`;
+                instructions += `Details: [Character 1's Emoji]\n`;
             }
 
             // Relationship line (only if relationships are enabled)
@@ -272,7 +273,34 @@ export function generateTrackerInstructions(includeHtmlPrompt = true, includeCon
                 instructions += `${thoughtsName}: [${thoughtsDescription}]\n`;
             }
 
-            instructions += `- … (Repeat the format above for every other present major character)\n`;
+            instructions += `\n`;
+
+            // Example 2
+            instructions += `- [Character 2 Name]\n`;
+
+            if (fieldPlaceholders) {
+                instructions += `Details: [Character 2's Emoji] | ${fieldPlaceholders}\n`;
+            } else {
+                instructions += `Details: [Character 2's Emoji]\n`;
+            }
+
+            if (relationshipPlaceholders) {
+                instructions += `Relationship: [${relationshipPlaceholders}]\n`;
+            }
+
+            if (enabledCharStats.length > 0) {
+                const statPlaceholders = enabledCharStats.map(s => `${s.name}: X%`).join(' | ');
+                instructions += `Stats: ${statPlaceholders}\n`;
+            }
+
+            if (thoughtsConfig?.enabled) {
+                const thoughtsName = thoughtsConfig.name || 'Thoughts';
+                const thoughtsDescription = thoughtsConfig.description || 'Internal monologue (in first person POV, up to three sentences long)';
+                instructions += `${thoughtsName}: [${thoughtsDescription}]\n`;
+            }
+
+            instructions += `\n`;
+            instructions += `(List each present character separately following the format above. If no major characters are present, use "- Unavailable")\n`;
 
             instructions += '```\n\n';
         }
