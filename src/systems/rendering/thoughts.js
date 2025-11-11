@@ -165,6 +165,13 @@ export function renderThoughts() {
             const name = line.trim().substring(2).trim();
 
             if (name && name.toLowerCase() !== 'unavailable') {
+                // Check for duplicate character names (AI error)
+                const existingChar = presentCharacters.find(c => c.name.toLowerCase() === name.toLowerCase());
+                if (existingChar) {
+                    debugLog(`[RPG Thoughts] ⚠️  WARNING: Duplicate character name detected: "${name}". AI generated multiple characters with the same name. This will cause data to be overwritten. Please regenerate the AI response.`);
+                    console.warn(`[RPG Thoughts] ⚠️  AI Error: Found duplicate character name "${name}". Each character should have a unique name. Overwriting previous "${name}" data.`);
+                }
+
                 currentCharacter = { name };
                 presentCharacters.push(currentCharacter);
                 debugLog(`[RPG Thoughts] ✓ Started new character: ${name}`);

@@ -245,10 +245,10 @@ export function generateTrackerInstructions(includeHtmlPrompt = true, includeCon
                 .join(' | ');
 
             // IMPORTANT: Show concrete multi-character example so AI creates separate blocks for EACH character
-            instructions += `IMPORTANT: List EACH present character as a separate block. Do NOT combine multiple characters into one entry.\n\n`;
+            instructions += `IMPORTANT: List EACH present character as a separate block with their UNIQUE NAME. Do NOT combine multiple characters into one entry. Do NOT reuse the same character name for different characters.\n\n`;
 
-            // Example 1
-            instructions += `- [Character 1 Name (do NOT include ${userName})]\n`;
+            // Example 1 - Use concrete example name to make it crystal clear
+            instructions += `- [First Character's Actual Name, e.g., "Alice" (do NOT include ${userName})]\n`;
 
             // Details line with emoji and custom fields
             if (fieldPlaceholders) {
@@ -277,8 +277,8 @@ export function generateTrackerInstructions(includeHtmlPrompt = true, includeCon
 
             instructions += `\n`;
 
-            // Example 2
-            instructions += `- [Character 2 Name]\n`;
+            // Example 2 - Different character with different name
+            instructions += `- [Second Character's Actual Name, e.g., "Bob"]\n`;
 
             if (fieldPlaceholders) {
                 instructions += `Details: [Emoji] | ${fieldPlaceholders}\n`;
@@ -303,8 +303,8 @@ export function generateTrackerInstructions(includeHtmlPrompt = true, includeCon
 
             instructions += `\n`;
 
-            // Example 3
-            instructions += `- [Character 3 Name]\n`;
+            // Example 3 - Third character with yet another unique name
+            instructions += `- [Third Character's Actual Name, e.g., "Carol"]\n`;
 
             if (fieldPlaceholders) {
                 instructions += `Details: [Emoji] | ${fieldPlaceholders}\n`;
@@ -328,7 +328,7 @@ export function generateTrackerInstructions(includeHtmlPrompt = true, includeCon
             }
 
             instructions += `\n`;
-            instructions += `(Continue this pattern for ALL present major characters. Each character MUST start with "- [Name]" on its own line. If no characters are present, use "- Unavailable")\n`;
+            instructions += `(Continue this pattern for ALL present major characters. Each character MUST have their own UNIQUE name (e.g., "Dvalin", "Paimon", "Jean" - NOT "Dvalin", "Dvalin", "Dvalin"). Each entry MUST start with "- [Unique Character Name]" on its own line. If no characters are present, use "- Unavailable")\n`;
 
             instructions += '```\n\n';
         }
